@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../providers/app_provider.dart';
@@ -57,54 +56,36 @@ class SettingsPage extends StatelessWidget {
             ),
             const SizedBox(height: 4),
             GestureDetector(
-              onLongPress: () async {
-                await Clipboard.setData(const ClipboardData(text: githubUrl));
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('链接已复制到剪贴板')),
-                  );
-                }
-              },
               onTap: () async {
                 final uri = Uri.parse(githubUrl);
-                if (await canLaunchUrl(uri)) {
-                  await launchUrl(uri, mode: LaunchMode.externalApplication);
-                } else {
-                  await Clipboard.setData(const ClipboardData(text: githubUrl));
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('链接已复制到剪贴板')),
-                    );
-                  }
-                }
+                await launchUrl(uri, mode: LaunchMode.externalApplication);
               },
               child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
                 decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                  borderRadius: BorderRadius.circular(8),
+                  color: Theme.of(context).colorScheme.primaryContainer,
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Row(
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.code, size: 16),
-                    SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        githubUrl,
-                        style: TextStyle(fontSize: 13, color: Colors.blue, decoration: TextDecoration.underline),
-                        overflow: TextOverflow.ellipsis,
+                    Icon(
+                      Icons.open_in_new,
+                      size: 20,
+                      color: Theme.of(context).colorScheme.onPrimaryContainer,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      '在 GitHub 上查看',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: Theme.of(context).colorScheme.onPrimaryContainer,
                       ),
                     ),
-                    SizedBox(width: 8),
-                    Icon(Icons.copy, size: 16, color: Colors.grey),
                   ],
                 ),
               ),
-            ),
-            const SizedBox(height: 4),
-            const Text(
-              '点击打开 / 长按复制',
-              style: TextStyle(fontSize: 11, color: Colors.grey),
             ),
           ],
         ),
