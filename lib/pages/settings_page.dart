@@ -43,7 +43,7 @@ class SettingsPage extends StatelessWidget {
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
-            const Text('版本：1.0.0'),
+            const Text('版本：1.1.0'),
             const SizedBox(height: 8),
             const Text(
               '本地记录网课学习进度工具',
