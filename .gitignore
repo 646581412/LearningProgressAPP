@@ -48,3 +48,7 @@ app.*.map.json
 
 # Android local properties
 /android/local.properties
+
+# Android signing
+/android/key.properties
+/android/app/keystore.jks
