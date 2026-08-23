@@ -194,40 +194,11 @@ class _HomePageState extends State<HomePage> {
             },
           ),
           const Divider(),
-          // 课程类型分组（展开显示课程，点击分类标题进入概览）
+          // 课程类型分组（始终显示，确保"添加课程"按钮可用）
           for (var type in types)
-            if ((groupedCourses[type.id]?.length ?? 0) > 0)
-              _CourseTypeExpansionTile(
-                typeName: type.name,
-                courses: groupedCourses[type.id]!,
-                progressMap: _progressMap,
-                selectedCourseId: _selectedCourseId,
-                onCourseTap: (id) {
-                  _navigateToCourse(id);
-                  Navigator.of(context).pop();
-                },
-                onTypeTap: () {
-                  Navigator.of(context).pop();
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (context) => CourseTypeOverviewPage(courseType: type),
-                    ),
-                  ).then((_) => _loadData());
-                },
-                onAddCourse: () {
-                  Navigator.of(context).pop();
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (context) => CourseEditPage(typeId: type.id),
-                    ),
-                  ).then((_) => _loadData());
-                },
-              ),
-          // 未分类
-          if ((groupedCourses[null]?.length ?? 0) > 0)
             _CourseTypeExpansionTile(
-              typeName: '未分类',
-              courses: groupedCourses[null]!,
+              typeName: type.name,
+              courses: groupedCourses[type.id] ?? [],
               progressMap: _progressMap,
               selectedCourseId: _selectedCourseId,
               onCourseTap: (id) {
@@ -238,7 +209,7 @@ class _HomePageState extends State<HomePage> {
                 Navigator.of(context).pop();
                 Navigator.of(context).push(
                   MaterialPageRoute(
-                    builder: (context) => const CourseTypeOverviewPage(courseType: null),
+                    builder: (context) => CourseTypeOverviewPage(courseType: type),
                   ),
                 ).then((_) => _loadData());
               },
@@ -246,11 +217,39 @@ class _HomePageState extends State<HomePage> {
                 Navigator.of(context).pop();
                 Navigator.of(context).push(
                   MaterialPageRoute(
-                    builder: (context) => const CourseEditPage(),
+                    builder: (context) => CourseEditPage(typeId: type.id),
                   ),
                 ).then((_) => _loadData());
               },
             ),
+          // 未分类（有未分类课程时才显示）
+          if ((groupedCourses[null]?.length ?? 0) > 0)
+            _CourseTypeExpansionTile(
+              typeName: '未分类',
+              courses: groupedCourses[null]!,
+            progressMap: _progressMap,
+            selectedCourseId: _selectedCourseId,
+            onCourseTap: (id) {
+              _navigateToCourse(id);
+              Navigator.of(context).pop();
+            },
+            onTypeTap: () {
+              Navigator.of(context).pop();
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => const CourseTypeOverviewPage(courseType: null),
+                ),
+              ).then((_) => _loadData());
+            },
+            onAddCourse: () {
+              Navigator.of(context).pop();
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => const CourseEditPage(),
+                ),
+              ).then((_) => _loadData());
+            },
+          ),
           const Divider(),
           ListTile(
             leading: const Icon(Icons.settings_outlined),

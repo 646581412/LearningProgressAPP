@@ -132,6 +132,14 @@ class _CourseTypeSettingsPageState extends State<CourseTypeSettingsPage> {
   }
 
   Future<void> _deleteType(CourseType type) async {
+    final provider = context.read<AppProvider>();
+    // 必须保留至少一个分类
+    if (provider.courseTypes.length <= 1) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('至少保留一个分类，无法删除')),
+      );
+      return;
+    }
     final count = _countMap[type.id] ?? 0;
     if (count > 0) {
       ScaffoldMessenger.of(context).showSnackBar(

@@ -41,6 +41,17 @@ class _CourseEditPageState extends State<CourseEditPage> {
     } else if (widget.typeId != null) {
       _selectedTypeId = widget.typeId;
     }
+    // 新建课程时默认选中第一个类型（延迟到 provider 就绪后）
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (widget.course == null && _selectedTypeId == null) {
+        final provider = context.read<AppProvider>();
+        if (provider.courseTypes.isNotEmpty && mounted) {
+          setState(() {
+            _selectedTypeId = provider.courseTypes.first.id;
+          });
+        }
+      }
+    });
   }
 
   @override
@@ -223,22 +234,11 @@ class _CourseEditPageState extends State<CourseEditPage> {
             color: colorScheme.primary,
             onTap: () {
               setState(() {
-                _selectedTypeId = isSelected ? null : type.id;
+                _selectedTypeId = type.id;
               });
             },
           );
         }),
-        // 未分类选项
-        _TypeChip(
-          label: '未分类',
-          isSelected: _selectedTypeId == null,
-          color: colorScheme.outline,
-          onTap: () {
-            setState(() {
-              _selectedTypeId = null;
-            });
-          },
-        ),
       ],
     );
   }

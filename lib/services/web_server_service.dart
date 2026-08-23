@@ -467,7 +467,7 @@ function openCourseModal() {
   document.getElementById('courseDesc').value = '';
   document.getElementById('expectedChapters').value = '';
   const sel = document.getElementById('courseType');
-  sel.innerHTML = '<option value="">未分类</option>' + types.map(t => '<option value="'+t.id+'">'+esc(t.name)+'</option>').join('');
+  sel.innerHTML = types.map(t => '<option value="'+t.id+'">'+esc(t.name)+'</option>').join('');
   document.getElementById('courseModal').classList.add('active');
 }
 
@@ -480,7 +480,7 @@ function editCourse(id) {
   document.getElementById('courseDesc').value = c.desc || '';
   document.getElementById('expectedChapters').value = c.expected_chapters || '';
   const sel = document.getElementById('courseType');
-  sel.innerHTML = '<option value="">未分类</option>' + types.map(t => '<option value="'+t.id+'" '+(t.id===c.type_id?'selected':'')+'>'+esc(t.name)+'</option>').join('');
+  sel.innerHTML = types.map(t => '<option value="'+t.id+'" '+(t.id===c.type_id?'selected':'')+'>'+esc(t.name)+'</option>').join('');
   document.getElementById('courseModal').classList.add('active');
 }
 

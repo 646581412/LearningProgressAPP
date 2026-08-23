@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:permission_handler/permission_handler.dart';
 import '../../services/web_server_service.dart';
+import '../../services/notification_service.dart';
 
 class WebManagementSettingsPage extends StatefulWidget {
   const WebManagementSettingsPage({super.key});
@@ -40,7 +43,13 @@ class _WebManagementSettingsPageState extends State<WebManagementSettingsPage> {
 
   Future<void> _toggleServer() async {
     if (_running) {
-      await WebServerService.instance.stop();
+      // 停止服务
+      try {
+        await WebServerService.instance.stop();
+      } catch (_) {}
+      try {
+        await NotificationService.instance.cancelWebServerNotification();
+      } catch (_) {}
       if (mounted) {
         setState(() {
           _running = false;
@@ -51,17 +60,36 @@ class _WebManagementSettingsPageState extends State<WebManagementSettingsPage> {
         );
       }
     } else {
+      // 启动服务前检查通知权限
+      await _ensureNotificationPermission();
+
       final port = int.tryParse(_portController.text.trim()) ?? 8080;
       if (port < 1024 || port > 65535) {
         setState(() => _errorMsg = '端口范围：1024-65535');
         return;
       }
-      final success = await WebServerService.instance.start(port: port);
+      bool success = false;
+      try {
+        success = await WebServerService.instance.start(port: port);
+      } catch (_) {
+        success = false;
+      }
       if (mounted) {
         if (success) {
+          String ip;
+          try {
+            ip = _ipAddress ?? await WebServerService.instance.getLocalIpAddress() ?? 'localhost';
+          } catch (_) {
+            ip = 'localhost';
+          }
+          final url = 'http://$ip:$port';
+          try {
+            await NotificationService.instance.showWebServerRunning(url);
+          } catch (_) {}
           setState(() {
             _running = true;
             _errorMsg = null;
+            _ipAddress = ip;
           });
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('网页管理已启动')),
@@ -72,6 +100,18 @@ class _WebManagementSettingsPageState extends State<WebManagementSettingsPage> {
           });
         }
       }
+    }
+  }
+
+  /// 检查并请求通知权限（Android 13+ 需要）
+  Future<void> _ensureNotificationPermission() async {
+    try {
+      final status = await Permission.notification.status;
+      if (!status.isGranted) {
+        await Permission.notification.request();
+      }
+    } catch (_) {
+      // 权限检查失败不影响服务启动
     }
   }
 
@@ -152,29 +192,39 @@ class _WebManagementSettingsPageState extends State<WebManagementSettingsPage> {
                   ],
                   if (_running && _ipAddress != null) ...[
                     const SizedBox(height: 16),
-                    const Text('访问地址', style: TextStyle(fontWeight: FontWeight.bold)),
+                    const Text('访问地址（长按复制）', style: TextStyle(fontWeight: FontWeight.bold)),
                     const SizedBox(height: 8),
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: colorScheme.primaryContainer.withOpacity(0.3),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(Icons.language, color: colorScheme.primary),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              'http://$_ipAddress:${_portController.text.trim()}',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: colorScheme.primary,
+                    GestureDetector(
+                      onLongPress: () {
+                        final url = 'http://$_ipAddress:${_portController.text.trim()}';
+                        Clipboard.setData(ClipboardData(text: url));
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('已复制网址：$url')),
+                        );
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: colorScheme.primaryContainer.withOpacity(0.3),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(Icons.language, color: colorScheme.primary),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'http://$_ipAddress:${_portController.text.trim()}',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: colorScheme.primary,
+                                ),
                               ),
                             ),
-                          ),
-                        ],
+                            Icon(Icons.copy, size: 18, color: colorScheme.primary),
+                          ],
+                        ),
                       ),
                     ),
                   ],

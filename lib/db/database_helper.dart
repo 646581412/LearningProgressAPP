@@ -656,7 +656,7 @@ class DatabaseHelper {
   Future<List<Map<String, dynamic>>> getRecentStudyRecords({int limit = 5}) async {
     Database db = await instance.database;
     return await db.rawQuery('''
-      SELECT 
+      SELECT
         ch.id as chapter_id,
         ch.title as chapter_title,
         ch.number as chapter_number,
@@ -673,6 +673,71 @@ class DatabaseHelper {
       ORDER BY ch.study_date DESC
       LIMIT ?
     ''', [limit]);
+  }
+
+  /// 获取某年某月所有有学习记录的日期（天数集合，1-31）
+  Future<Set<int>> getStudyDatesInMonth(int year, int month) async {
+    Database db = await instance.database;
+    DateTime monthStart = DateTime(year, month, 1);
+    DateTime nextMonthStart = DateTime(year, month + 1, 1);
+    String start = monthStart.toIso8601String();
+    String end = nextMonthStart.toIso8601String();
+
+    List<Map<String, dynamic>> result = await db.rawQuery('''
+      SELECT DISTINCT DATE(study_date) as date
+      FROM chapter
+      WHERE study_date IS NOT NULL AND study_date >= ? AND study_date < ?
+    ''', [start, end]);
+
+    Set<int> days = {};
+    for (var row in result) {
+      String? dateStr = row['date'] as String?;
+      if (dateStr == null) continue;
+      DateTime? d = DateTime.tryParse(dateStr);
+      if (d != null && d.year == year && d.month == month) {
+        days.add(d.day);
+      }
+    }
+    return days;
+  }
+
+  /// 历史总学习天数（不同日期数）
+  Future<int> getTotalStudyDays() async {
+    Database db = await instance.database;
+    List<Map<String, dynamic>> result = await db.rawQuery('''
+      SELECT COUNT(DISTINCT DATE(study_date)) as count
+      FROM chapter
+      WHERE study_date IS NOT NULL
+    ''');
+    return Sqflite.firstIntValue(result) ?? 0;
+  }
+
+  /// 查询全部章节（带课程信息），可按状态过滤：null=全部, 1=学习中, 2=已完成
+  Future<List<Map<String, dynamic>>> getAllChaptersWithCourse({int? status}) async {
+    Database db = await instance.database;
+    String where = '';
+    List<dynamic> args = [];
+    if (status != null) {
+      where = 'WHERE ch.status = ?';
+      args = [status];
+    }
+    return await db.rawQuery('''
+      SELECT
+        ch.id as chapter_id,
+        ch.title as chapter_title,
+        ch.number as chapter_number,
+        ch.status as chapter_status,
+        ch.study_date as study_date,
+        ch.remark as remark,
+        c.id as course_id,
+        c.course_name as course_name,
+        ct.name as type_name
+      FROM chapter ch
+      JOIN course c ON ch.course_id = c.id
+      LEFT JOIN course_type ct ON c.type_id = ct.id
+      $where
+      ORDER BY ch.study_date IS NULL ASC, ch.study_date DESC, ch.id DESC
+    ''', args);
   }
 
   Future<void> updateLastStudyTime(int courseId) async {
